@@ -11,8 +11,6 @@ LANGCHAIN_PROJECT = os.getenv("LANGCHAIN_PROJECT")
 
 base_url = "http://localhost:11434"
 model = 'llama3:latest'
-# model = 'sheldon'
-# model = 'sherlock'
 
 llm = ChatOllama(
     base_url=base_url,
@@ -24,8 +22,3 @@ llm = ChatOllama(
 response = llm.invoke('how to make a good kunafeh?. answer in 5 sentences?')
 print(response.content)
 print(response.response_metadata)
-
-# response = ''
-# for chunk in llm.stream('How to make a good stuffed cabbage?'):
-#  response = response + chunk.content
-#  print(response)
