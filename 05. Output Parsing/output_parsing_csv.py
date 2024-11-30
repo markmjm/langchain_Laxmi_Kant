@@ -3,9 +3,7 @@ import os
 from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
 from langchain_ollama import ChatOllama
-from typing import Optional
-from pydantic import BaseModel, Field
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers import CommaSeparatedListOutputParser
 
 load_dotenv()
 LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2")
@@ -27,17 +25,11 @@ llm = ChatOllama(
 )
 # print(llm.invoke("Tell me a joke about Washington DC"))
 ##
-## Create a Pydantic class for a Joke
-class Joke(BaseModel):
-    """Joke to tell"""
-    setup: str = Field("The setup of the Joke")
-    punchline: str = Field(description="The punchline of the Joke")
-    rating: Optional[int] = Field(description="The rating of a the Joke.   1 to 10")
-##
-parser = JsonOutputParser(pydantic_object=Joke)
+parser = CommaSeparatedListOutputParser()
+print(parser.get_format_instructions())
 joke_prompt = PromptTemplate(
     template='''
-    Answer the user query with a joke.   Here is your formating instructions.
+    Answer the user query with a list of values.   Here is your formating instructions.
     {format_instructions}
 
     Query: {query}
@@ -45,8 +37,8 @@ joke_prompt = PromptTemplate(
     input_variables=['query'],
     partial_variables={'format_instructions': parser.get_format_instructions()}
 )
-myChain = joke_prompt | llm | parser  # use the pydentic parser to clean up the output
-output = myChain.invoke({'query': 'Tell me a joke about dogs.'})
+myChain = joke_prompt | llm | parser
+output = myChain.invoke({'query': 'generate my website seo keywords. I have content about the NLP and LLM.'})
 print(output)
 
 
