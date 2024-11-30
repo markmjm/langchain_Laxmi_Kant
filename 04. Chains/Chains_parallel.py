@@ -5,6 +5,8 @@ from langchain_ollama import ChatOllama
 from langchain_core.prompts import (SystemMessagePromptTemplate, HumanMessagePromptTemplate, PromptTemplate,
                                     ChatPromptTemplate)
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableParallel
+from sklearn.utils.estimator_checks import check_no_attributes_set_in_init
 
 load_dotenv()
 LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2")
@@ -34,3 +36,22 @@ template = ChatPromptTemplate(messages)
 fact_chain = template | llm | StrOutputParser()
 output = fact_chain.invoke({'school': 'primary', 'topics': 'solar system', 'points': 5})
 print(output)
+print(f"{'*'*5}\n{'*'*5}")
+#
+# 2nd runnable - or chain ... in parallel --- you can see the response on langsmith
+question = HumanMessagePromptTemplate.from_template('Write a peom on {topics} in {sentences} lines')
+messages = [system, question]
+template = ChatPromptTemplate(messages)
+poem_chain = template | llm | StrOutputParser()
+output = poem_chain.invoke({'school': 'primary', 'topics': 'solar system', 'sentences': 5})
+print(output)
+print(f"{'*'*5}\n{'*'*5}")
+#
+#
+#
+chain = RunnableParallel(fact = fact_chain, poem =poem_chain)
+output = chain.invoke({'school': 'primary', 'topics': 'solar system', 'points': 8, 'sentences': 8})
+print(output)
+
+
+
