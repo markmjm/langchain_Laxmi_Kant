@@ -1,37 +1,40 @@
 # Youtube Streamlit Playlist
 # https://www.youtube.com/watch?v=hff2tHUzxJM&list=PLc2rvfiptPSSpZ99EnJbH5LjTJ_nOoSWW
 
+import os
 import streamlit as st
 
-from dotenv import load_dotenv # langfuse or opik
+from dotenv import load_dotenv
 from langchain_ollama import ChatOllama
-
 from langchain_core.prompts import (
-                                        SystemMessagePromptTemplate,
-                                        HumanMessagePromptTemplate,
-                                        ChatPromptTemplate,
-                                        MessagesPlaceholder
-                                        )
-
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+    ChatPromptTemplate,
+    MessagesPlaceholder
+)
 
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import SQLChatMessageHistory
 
 from langchain_core.output_parsers import StrOutputParser
 
-load_dotenv('./../.env')
-
-
-st.title("Make Your Own Chatbot")
-st.write("Chat with me! Catch me at https://youtube.com/kgptalkie")
+load_dotenv()
+# LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2")
+# LANGCHAIN_ENDPOINT = os.getenv("LANGCHAIN_ENDPOINT")
+# LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
+# LANGCHAIN_PROJECT = os.getenv("LANGCHAIN_PROJECT")
 
 base_url = "http://localhost:11434"
 model = 'llama3.2:latest'
+user_id = st.text_input('Enter your user id', "MarkC")
 
-user_id = st.text_input("Enter your user id", "laxmikant")
 
 def get_session_history(session_id):
     return SQLChatMessageHistory(session_id, "sqlite:///chat_history.db")
+
+
+st.title("Make Your Own Chatbot")
+st.write("Chat with me!")
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -39,15 +42,22 @@ if "chat_history" not in st.session_state:
 if st.button("Start New Conversation"):
     st.session_state.chat_history = []
     history = get_session_history(user_id)
+    # history.clear()
+if st.button('Clear History for this user'):
+    history = get_session_history(user_id)
     history.clear()
-
 
 for message in st.session_state.chat_history:
     with st.chat_message(message['role']):
         st.markdown(message['content'])
 
+# #########################################################
+# #########################################################
+# Begin: LLM SETUP
+# #########################################################
+# #########################################################
 
-### LLM Setup
+
 llm = ChatOllama(base_url=base_url, model=model)
 
 system = SystemMessagePromptTemplate.from_template("You are helpful assistant.")
@@ -59,27 +69,27 @@ prompt = ChatPromptTemplate(messages=messages)
 
 chain = prompt | llm | StrOutputParser()
 
-
-runnable_with_history = RunnableWithMessageHistory(chain, get_session_history, 
-                                                   input_messages_key='input', 
+runnable_with_history = RunnableWithMessageHistory(chain, get_session_history,
+                                                   input_messages_key='input',
                                                    history_messages_key='history')
+
 
 def chat_with_llm(session_id, input):
     for output in runnable_with_history.stream({'input': input}, config={'configurable': {'session_id': session_id}}):
-
         yield output
 
 
-prompt = st.chat_input("What is up?")
-# st.write(prompt)
+# #########################################################
+# #########################################################
+# End: LLM SETUP
+# #########################################################
+# #########################################################
 
+prompt = st.chat_input("What's up?")  # user responds to this and the response gets added to role 'user' below
 if prompt:
     st.session_state.chat_history.append({'role': 'user', 'content': prompt})
-
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant"):
+    with st.chat_message('user'):
+        st.write(prompt)
+    with st.chat_message('assistant'):
         response = st.write_stream(chat_with_llm(user_id, prompt))
-
     st.session_state.chat_history.append({'role': 'assistant', 'content': response})
