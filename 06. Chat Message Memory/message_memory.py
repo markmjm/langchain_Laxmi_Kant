@@ -61,6 +61,18 @@ def chat_with_llm(session_id, input):
 
 user_id = "Santa Clause"
 about = "My name is Santa Clause. I am the CEO for Santa Clause Enterprises."
-print(chat_with_llm(user_id, about))
+response = chat_with_llm(user_id, about)
+print(f"{response}\n{'*'*5}\n{'*'*5}")
 about = "what is my name?"
-print(chat_with_llm(user_id, about))
+response = chat_with_llm(user_id, about)
+print(f"{response}\n{'*'*5}\n{'*'*5}")
+#
+#clean up the DB.  Otherwise, the LLM persona gets very annoyed.
+# Test Clean up
+history = get_session_history(user_id)
+history.get_messages()
+history.clear()
+print(f"history after clear: {history.get_messages()}")
+about = "what is my name?"
+response = chat_with_llm(user_id, about)
+print(f"{response}\n{'*'*5}\n{'*'*5}")
